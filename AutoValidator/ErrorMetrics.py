@@ -1,7 +1,7 @@
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.metrics import *
 
 import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
@@ -27,10 +27,10 @@ def calculate_all_errors(training, prediction, actual, horizon):
     rActual  = ts(actual,     frequency = 1 ) 
     
     # Calculate the errors
-    errors['sMAPE'] = thetaModel.errorMetric(obs = rActual, forec = rPred, type = "sAPE", statistic = "M")[0]
-    errors['MAE']   = thetaModel.errorMetric(obs = rActual, forec = rPred, type = "AE", statistic = "M")[0]
-    errors['MAPE']  = thetaModel.errorMetric(obs = rActual, forec = rPred, type = "APE", statistic = "M")[0]
+    errors['MAE']   = #thetaModel.errorMetric(obs = rActual, forec = rPred, type = "AE", statistic = "M")[0]
     errors['RMSE']  = np.sqrt(mean_squared_error(actual, prediction))
+    errors['MAPE']  = thetaModel.errorMetric(obs = rActual, forec = rPred, type = "APE", statistic = "M")[0]
+    errors['sMAPE'] = thetaModel.errorMetric(obs = rActual, forec = rPred, type = "sAPE", statistic = "M")[0]
     errors['MASE']  = calculate_MASE(training, prediction, actual) 
     errors['MASE1'] = smooth.MASE(rActual, rPred, np.mean(training), digits = 5)[0]
     errors['MASE2'] = MASE(training, actual, prediction)

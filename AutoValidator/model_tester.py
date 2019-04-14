@@ -47,7 +47,6 @@ def xy_backtest(X, y, start, step_size):
         
     return results
 
-
 class ModelTester():
     """
     
