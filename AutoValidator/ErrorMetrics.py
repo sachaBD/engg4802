@@ -17,25 +17,34 @@ thetaModel = importr('forecTheta')
 smooth     = importr('smooth')
 
 
-def calculate_all_errors(training, prediction, actual, horizon):
+__error_metrics__ = ['MAE', 'RMSE', 'MAPE', 'sMAPE', 'MASE', 'MASE1', 'MEAN_ASE']
+
+def calculate_all_errors(training, actual, prediction, horizon):
+    """
+    Calculate all error metrics used within the project.
+    """
+    indexer = np.arange(horizon)[None, :] + np.arange((len(actual) - horizon))[:, None]
+    actual = actual[indexer]
+    prediction = prediction[:len(actual), :]
+    print(actual.shape, prediction.shape)
+    
+    training, actual, prediction = training.flatten(), actual.flatten(), prediction.flatten()
+    
     errors = {}
-    
-    # Calculate the error given each metric
-    
+        
     # pass the data to R
     rPred    = ts(prediction, frequency = 1 )
     rActual  = ts(actual,     frequency = 1 ) 
     
-    # Calculate the errors
-    errors['MAE']   = #thetaModel.errorMetric(obs = rActual, forec = rPred, type = "AE", statistic = "M")[0]
-    errors['RMSE']  = np.sqrt(mean_squared_error(actual, prediction))
-    errors['MAPE']  = thetaModel.errorMetric(obs = rActual, forec = rPred, type = "APE", statistic = "M")[0]
-    errors['sMAPE'] = thetaModel.errorMetric(obs = rActual, forec = rPred, type = "sAPE", statistic = "M")[0]
-    errors['MASE']  = calculate_MASE(training, prediction, actual) 
-    errors['MASE1'] = smooth.MASE(rActual, rPred, np.mean(training), digits = 5)[0]
-    errors['MASE2'] = MASE(training, actual, prediction)
-    errors['MEAN_MASE']: calculate_MASE(training, prediction, actual)
-    errors['RW_MASE'] : calculate_rw_MASE(training, prediction, actual, horizon)
+    # Calculate each error metric
+    errors['MAE']      = mean_absolute_error(actual, prediction)
+    errors['RMSE']     = np.sqrt(mean_squared_error(actual, prediction))
+    errors['MAPE']     = thetaModel.errorMetric(obs = rActual, forec = rPred, type = "APE", statistic = "M")[0]
+    errors['sMAPE']    = thetaModel.errorMetric(obs = rActual, forec = rPred, type = "sAPE", statistic = "M")[0]
+    errors['MASE']     = MASE(training, actual, prediction)
+    errors['MASE1']    = smooth.MASE(rActual, rPred, np.mean(training), digits = 5)[0]
+    errors['MEAN_ASE'] = calculate_MASE(training, prediction, actual)
+#     errors['RW_ASE']   = calculate_rw_MASE(training, prediction, actual, horizon)
     
     return errors
 
@@ -44,7 +53,9 @@ def MASE(training_series, testing_series, prediction_series):
     """
     Computes the MEAN-ABSOLUTE SCALED ERROR forcast error for univariate time series prediction.
     
-    See "Another look at measures of forecast accuracy", Rob J Hyndman
+    See "Another look at measures of forecast accuracy", Rob J Hyndman.
+    
+    MASE is the out of sample forecasting error over the in sample naive forecasting error (simply using the previous value).
     
     parameters:
         training_series: the series used to train the model, 1d numpy array
@@ -52,12 +63,23 @@ def MASE(training_series, testing_series, prediction_series):
         prediction_series: the prediction of testing_series, 1d numpy array (same size as testing_series) or float
         absolute: "squares" to use sum of squares and root the result, "absolute" to use absolute values.
     
-    """
-    n = training_series.shape[0]
-    d = np.abs(  np.diff(training_series) ).sum()/(n-1)
+    """   
+    # Take the average of the in sample Naive (Use the previous value) error
+    naive_forecast = training_series[1:] - training_series[0:-1]
+    avg_naive_error = mean_absolute_error(naive_forecast, training_series[1:])
     
-    errors = np.abs(testing_series - prediction_series )
-    return errors.mean()/d
+    # Find the out of sample error of our forecast
+    avg_forecast_error = mean_absolute_error(prediction_series, testing_series)
+    
+    # MASE is the forecasting error over the average in sample naive error
+    return avg_forecast_error / avg_naive_error
+    
+    
+#     n = training_series.shape[0]
+#     d = np.abs(  np.diff(training_series) ).sum()/(n-1)
+    
+#     errors = np.abs(testing_series - prediction_series )
+#     return errors.mean()/d
 
 def my_MASE(training, test, pred):
     n = len(training)
@@ -69,9 +91,9 @@ def my_MASE(training, test, pred):
     q = numerator / denominator
     
     return np.mean(np.abs(q))
-    
 
-class RandomWalk():
+
+class _RandomWalk():
     
     def __init__(self, horizon):
         self.horizon = horizon
@@ -80,13 +102,13 @@ class RandomWalk():
         self.train = labels
     
     def predict(self, data):
-        comb_data = np.hstack([self.train, data])
+        comb_data = np.vstack([self.train, data])
         
-        results = np.zeros((len(data), self.horizon))
+        results = np.zeros((data.shape[0], self.horizon))
         
         std = np.std(comb_data)
         
-        results[:, 0] = data[:]
+        results[:, :1] = data[:]
         
         noise = np.random.normal(0, std, (len(data), self.horizon))
         results += noise        
@@ -98,21 +120,16 @@ class RandomWalk():
 
     
 def calculate_rw_MASE(training, test, pred, horizon):
-    naive_estimator = RandomWalk(horizon)
+#     test = test.reshape((len(test), horizon))
+#     pred = pred.reshape((len(pred), horizon))
+    
+    naive_estimator = _RandomWalk(horizon)
     naive_estimator.fit(training, training)
     naive_estimate = naive_estimator.predict(test[np.arange(0, len(test), horizon)]).flatten()
+    naive_estimate = naive_estimate.reshape((len(naive_estimate), horizon))
     
     return np.mean(np.abs(test - pred)) / np.mean(np.abs(test - naive_estimate))
     
-
-"""
-Mean absolute error.
-"""
-def calculate_MAE(prediction : np.ndarray, actual : np.ndarray) -> float:
-#     print("actual", actual)
-#     print("Prediction", prediction)
-    return np.mean(np.abs(actual - prediction))
-
 
 
 """
@@ -121,15 +138,13 @@ Mean absolute scaled error.
 def calculate_MASE(trainingData : np.ndarray, prediction : np.ndarray, actual : np.ndarray) -> float:
     assert len(prediction) == len(actual)
 
-    # TODO: Validate this
-
     # Train a naive estimator as the mean estimator
     naive_estimate = np.repeat(np.mean(trainingData), len(prediction))
 
     # calculate errors
-    naive_error     = calculate_MAE(naive_estimate, actual)
-    estimator_error = calculate_MAE(prediction, actual)
-
+    naive_error     = mean_absolute_error(naive_estimate, actual)
+    estimator_error = mean_absolute_error(prediction, actual)
+    
     return estimator_error / naive_error
 
 

@@ -47,12 +47,37 @@ def xy_backtest(X, y, start, step_size):
         
     return results
 
+from AutoValidator.ErrorMetrics import __error_metrics__, calculate_all_errors
+from utils.progress import ProgressBar
+
+def backtest(data: np.ndarray, start: float, test_step_size: int):
+    """
+    Splits a dataset into a train and test set using backtesting with a set size of each test set and a % of data heldout to
+    always be in the train set.
+    
+    data -> A numpy array of pandas dataframe of the data to split
+    start -> a value in [0, 1] of the % of data to always be in the train set
+    test_step_size -> The size of each test split
+    """
+    step = test_step_size
+    start = int(start * len(data))
+    splits = np.arange(start, len(data) + step, step, dtype=np.int)
+    
+    train, test = [], []
+    
+    for test_start, test_end in zip(splits[:-1], splits[1:]):
+        train += [data[:test_start]]
+        test += [data[test_start:test_end]]
+        
+    return train, test
+
+
 class ModelTester():
     """
     
     """
     
-    def __init__(self, dataset, test_step_size=10, train_holdout=0.8):
+    def __init__(self, dataset, model, test_step_size=10, train_holdout=0.8):
         self.horizon = test_step_size
         self.dataset = dataset
         self.train_holdout = train_holdout
@@ -60,49 +85,46 @@ class ModelTester():
         # Divide dataset
         self.train, self.test = backtest(dataset, train_holdout, test_step_size)
         
-        self.models = {} # Name : model
+        self.model = model
         
         # Saves results in the form: name : array of the results over the entire testing set
-        self.results = {} # Name : np.ndarray # This 
+        self.predictions = {} # Name : np.ndarray # This
+        
+        # Save the error metrics
+        self.errors = pd.DataFrame(columns=__error_metrics__)
         
         self.progressBar = ProgressBar()
     
-    def add_model(self, model, name: str = None):
-        if name is None:
-            name = model.__repr__()
-        self.models[name] = model
+
+    def __repr__(self):
+        return 'Tester of' + repr(model)
+
     
-    
-    def test_models(self):
+    def test_model(self):
+        """
+        Test the given model with the dataset. This saves the predictions and errors.
+        Returns -> Predictions of the model.
+        """
         self.results = {}
+        
         # Count the size of the test set
         size_of_tests = sum([len(test_set) for test_set in self.test])
     
-        for name, model in self.models.items():
-            print('Testing model: ' + name)
-            print(len(self.test))
-            print((len(self.train), size_of_tests))
-            
-            self.results[name] = {}
-            for column in self.train[0].columns:
-                self.results[name][column] = np.zeros((len(self.test) * len(self.test[0]), self.test[0].shape[0]))
-            
-            for column in self.train[0].columns:
-                cum_index = 0
-                current_results = self.results[name][column]
-            
-                for split_ind, (train, test) in enumerate(zip(self.train, self.test)):
-                    if split_ind % 10 == 0:
-                        print("{:d} / {:d}".format(split_ind, len(self.train)))
+        for column in self.train[0].columns:
+            cum_index = 0
+            self.predictions[column] = np.zeros((len(self.test) * len(self.test[0]), self.test[0].shape[0]))
 
-                    train, test = train[column], test[column]
+            for split_ind, (train, test) in enumerate(zip(self.train, self.test)):
+                if split_ind % 10 == 0:
+                    print("{:d} / {:d}".format(split_ind, len(self.train)))
 
-                    model.fit(train, train)
-                    current_results[cum_index : cum_index + test.shape[0]] = model.predict(test)
-                    cum_index += test.shape[0]
-# 
+                train, test = train[column], test[column]
+
+                model.fit(train, train)
+                self.predictions[column][cum_index : cum_index + test.shape[0]] = model.predict(test)
+                cum_index += test.shape[0]
                                           
-        return self.results
+        return self.predictions
 
                                           
     def evaluate_model(self, names):
@@ -158,7 +180,7 @@ class ModelTester():
     
     def compare_hurst(self, hurst_estimates, err_to_use='RMSE', errors=None):
         if errors is None:
-            errors = self.evaluate_model([model for model in self.models])
+            errors = self.errors
         
         err_col = []
         for col in errors.columns:
@@ -182,7 +204,7 @@ class ModelTester():
         plt.legend()
     
     
-    def visualise_result(self, name, index, figsize=(6, 6)):
+    def visualise_result(self, index, figsize=(6, 6)):
         try:
             iter(index)
             indexes = index
@@ -197,12 +219,24 @@ class ModelTester():
         
         for index in indexes:
             col = self.train[0].columns[index]
-            axes[indexes.index(index)].plot(np.arange(0, len(self.results[name][col])), np.hstack([x.iloc[:, index] for x in self.test]), color='blue', label='actual')
-            axes[indexes.index(index)].plot(np.arange(0, len(self.results[name][col])), self.results[name][col], color='orange', label='pred')
+
+            pred_at = np.arange(0, len(self.predictions[col]), self.horizon, dtype=np.int)
+            x = np.arange(0, len(self.predictions[col]))
+            test = np.hstack([x[col] for x in self.test]).flatten()
+            pred = self.predictions[col][pred_at].flatten()
             
-            pred_at = np.arange(0, len(self.results[name][col]), self.horizon, dtype=np.int)
-            axes[indexes.index(index)].scatter(pred_at, self.results[name][col][pred_at, 0], color='orange')
+            test, pred, x = test[:min(len(test), len(pred))], pred[:min(len(test), len(pred))], x[:min(len(test), len(pred))]
+            
+            axes[indexes.index(index)].plot(x, test, color='blue', label='actual')
+            axes[indexes.index(index)].plot(x, pred, color='orange', label='pred')
+
+            axes[indexes.index(index)].scatter(pred_at, self.predictions[col][pred_at, 0], color='orange')
+
+#             pred_at = np.arange(0, len(self.predictions[col]), self.horizon, dtype=np.int)
+#             axes[indexes.index(index)].plot(np.arange(0, len(self.predictions[col])), np.hstack([x.iloc[:, :] for x in self.test]).flatten(), color='blue', label='actual')
+#             axes[indexes.index(index)].plot(np.arange(0, len(self.predictions[col])), self.predictions[col][pred_at].flatten(), color='orange', label='pred')
+            
+#             axes[indexes.index(index)].scatter(pred_at, self.predictions[col][pred_at, 0], color='orange')
 
             
             
-
