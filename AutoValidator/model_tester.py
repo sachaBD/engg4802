@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import math
 from scipy import stats
 
-import plotly_express as px
-
 from sklearn.metrics import mean_squared_error
 from AutoValidator.ErrorMetrics import *
 
@@ -13,39 +11,6 @@ import sys
 sys.path.append('../utils')
 from utils.progress import ProgressBar
 
-def backtest(data: np.ndarray, start: float, test_step_size: int):
-    """
-    Splits a dataset into a train and test set using backtesting with a set size of each test set and a % of data heldout to
-    always be in the train set.
-    
-    data -> A numpy array of pandas dataframe of the data to split
-    start -> a value in [0, 1] of the % of data to always be in the train set
-    test_step_size -> The size of each test split
-    """
-    step = test_step_size
-    start = int(start * len(data))
-    splits = np.arange(start, len(data), step)
-    
-    train, test = [], []
-    
-    for test_start, test_end in zip(splits[:-1], splits[1:]):
-        train += [data[:test_start]]
-        test += [data[test_start:test_end]]
-        
-    return train, test
-
-
-def xy_backtest(X, y, start, step_size):
-    step = step_size
-    start = int(start * len(X))
-    splits = np.arange(start, len(X), step)
-    
-    results = []
-    
-    for test_start, test_end in zip(splits[:-1], splits[1:]):
-        results.append((X[:test_start], X[test_start:test_end], y[:test_start], y[test_start:test_end]))
-        
-    return results
 
 from AutoValidator.ErrorMetrics import __error_metrics__, calculate_all_errors
 from utils.progress import ProgressBar
