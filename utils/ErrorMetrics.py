@@ -19,12 +19,13 @@ smooth = importr('smooth')
 __error_metrics__ = ['MAE', 'RMSE', 'MAPE', 'sMAPE', 'MASE', 'MASE1', 'MEAN_ASE']
 
 
-def calculate_all_errors(training, actual, prediction, horizon):
+def calculate_all_errors(training, actual, prediction, horizon, expand_actual=True):
     """
     Calculate all error metrics used within the project.
     """
-    indexer = np.arange(horizon)[None, :] + np.arange((len(actual) - horizon))[:, None]
-    actual = actual[indexer]
+    if expand_actual:
+        indexer = np.arange(horizon)[None, :] + np.arange((len(actual) - horizon))[:, None]
+        actual = actual[indexer]
     prediction = prediction[:len(actual), :]
     print(actual.shape, prediction.shape)
 

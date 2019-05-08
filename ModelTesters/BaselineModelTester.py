@@ -17,63 +17,47 @@ class BaselineModelTester(ModelTester):
 
     def __init__(self, dataset, model, test_step_size=10, train_holdout=0.8):
         ModelTester.__init__(self, dataset, model, test_step_size, train_holdout)
-    #     self.horizon = test_step_size
-    #     self.dataset = dataset
-    #     self.train_holdout = train_holdout
-    #
-    #     # Divide dataset
-    #     self.train, self.test = backtest(dataset, train_holdout, test_step_size)
-    #
-    #     self.model = model
-    #
-    #     # Saves results in the form: name : array of the results over the entire testing set
-    #     self.predictions = {}  # Name : np.ndarray # This
-    #
-    #     # Save the error metrics
-    #     self.errors = pd.DataFrame(columns=__error_metrics__)
-    #
-    #     self.progressBar = ProgressBar()
 
 
     def __repr__(self):
         return 'BaselineTester of' + repr(self.model)
 
 
-    def compare_hurst(self, hurst_estimates, err_to_use='RMSE', errors=None):
-        """
+    # def compare_hurst(self, hurst_estimates, err_to_use='RMSE', errors=None, figsize=(8, 6)):
+    #     """
+    #
+    #     :param hurst_estimates:
+    #     :param err_to_use:
+    #     :param errors:
+    #     :return:
+    #     """
+    #     if errors is None:
+    #         errors = self.errors
+    #
+    #     plt.figure(figsize=figsize)
+    #     plt.errorbar(x=hurst_estimates['avg'], y=errors[err_to_use], xerr=hurst_estimates['std'], fmt='o')
+    #
+    #     # Linear fit
+    #     slope, intercept, r_value, p_value, std_err = stats.linregress(hurst_estimates['avg'], errors[err_to_use])
+    #     X = np.linspace(0, hurst_estimates['avg'].max() * 1.1, 10)
+    #     plt.xlim([hurst_estimates['avg'].min() * 0.98, hurst_estimates['avg'].max() * 1.02])
+    #
+    #     plt.plot(X, intercept + slope * X, c='black',
+    #              label="y= " + str(round(slope, 2)) + "X + " + str(round(intercept, 2)) + ", R = " + str(
+    #                  round(r_value ** 2, 2)))
+    #
+    #     plt.fill_between(X, intercept + slope * X + std_err, intercept + slope * X - std_err, facecolor='r', alpha=0.5)
+    #     plt.legend()
 
-        :param hurst_estimates:
-        :param err_to_use:
-        :param errors:
-        :return:
-        """
-        errors = self.errors
-
-        err_col = []
-        for col in errors.columns:
-            if err_to_use in col:
-                err_col += [col]
-
-        errors[err_to_use + ' avg'] = errors[err_col].mean(axis=1)
-        errors[err_to_use + ' std'] = errors[err_col].std(axis=1)
-
-        plt.figure()
-        plt.errorbar(x=hurst_estimates['avg'], y=errors['RMSE avg'], xerr=hurst_estimates['std'],
-                     yerr=errors['RMSE std'], fmt='o')
-
-        # Linear fit
-        slope, intercept, r_value, p_value, std_err = stats.linregress(hurst_estimates['avg'], errors['RMSE avg'])
-        X = np.linspace(0, hurst_estimates['avg'].max() * 1.1, 10)
-        plt.xlim([hurst_estimates['avg'].min() * 0.98, hurst_estimates['avg'].max() * 1.02])
-
-        plt.plot(X, intercept + slope * X, c='black',
-                 label="y= " + str(round(slope, 2)) + "X + " + str(round(intercept, 2)) + ", R = " + str(
-                     round(r_value ** 2, 2)))
-
-        plt.fill_between(X, intercept + slope * X + std_err, intercept + slope * X - std_err, facecolor='r', alpha=0.5)
-        plt.legend()
 
     def visualise_result(self, name, index, figsize=(6, 6)):
+        """
+
+        :param name:
+        :param index:
+        :param figsize:
+        :return:
+        """
         try:
             iter(index)
             indexes = index

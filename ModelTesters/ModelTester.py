@@ -64,7 +64,7 @@ class ModelTester():
         return self.predictions
 
 
-    def compare_hurst(self, hurst_estimates, err_to_use='RMSE', errors=None):
+    def compare_hurst(self, hurst_estimates, err_to_use='RMSE', errors=None, figsize=(8, 6)):
         """
         Create a graphical comparison of the Hurst Exponent vs forecasting error for each dataset
 
@@ -76,19 +76,11 @@ class ModelTester():
         if errors is None:
             errors = self.errors
 
-        err_col = []
-        for col in errors.columns:
-            if err_to_use in col:
-                err_col += [col]
-
-        errors[err_to_use + ' avg'] = errors[err_col].mean(axis=1)
-        errors[err_to_use + ' std'] = errors[err_col].std(axis=1)
-
-        plt.figure()
-        plt.errorbar(x=hurst_estimates['avg'], y=errors['RMSE avg'], xerr=hurst_estimates['std'], yerr=errors['RMSE std'], fmt='o')
+        plt.figure(figsize=figsize)
+        plt.errorbar(x=hurst_estimates['avg'], y=errors[err_to_use], xerr=hurst_estimates['std'], fmt='o')
 
         # Linear fit
-        slope, intercept, r_value, p_value, std_err = stats.linregress(hurst_estimates['avg'], errors['RMSE avg'])
+        slope, intercept, r_value, p_value, std_err = stats.linregress(hurst_estimates['avg'], errors[err_to_use])
         X = np.linspace(0, hurst_estimates['avg'].max() * 1.1, 10)
         plt.xlim([hurst_estimates['avg'].min() * 0.98, hurst_estimates['avg'].max() * 1.02])
 
@@ -97,6 +89,9 @@ class ModelTester():
 
         plt.fill_between(X, intercept + slope * X + std_err, intercept + slope * X - std_err, facecolor='r', alpha=0.5)
         plt.legend()
+
+        plt.xlabel('Hurst Exponent (H)')
+        plt.ylabel(err_to_use)
 
 
     def visualise_result(self, index, figsize=(6, 6)):
@@ -115,17 +110,19 @@ class ModelTester():
         for index in indexes:
             col = self.train[0].columns[index]
 
-            pred_at = np.arange(0, len(self.predictions[col]), self.horizon, dtype=np.int)
+            # pred_at = np.arange(0, len(self.predictions[col]), self.horizon, dtype=np.int)
             x = np.arange(0, len(self.predictions[col]))
             test = np.hstack([x[col] for x in self.test]).flatten()
-            pred = self.predictions[col][pred_at].flatten()
+            # pred = self.predictions[col][pred_at].flatten()
+            pred = self.predictions[col].flatten()
 
             test, pred, x = test[:min(len(test), len(pred))], pred[:min(len(test), len(pred))], x[:min(len(test), len(pred))]
+            print(pred.shape)
 
             axes[indexes.index(index)].plot(x, test, color='blue', label='actual')
             axes[indexes.index(index)].plot(x, pred, color='orange', label='pred')
 
-            axes[indexes.index(index)].scatter(pred_at, self.predictions[col][pred_at, 0], color='orange')
+            # axes[indexes.index(index)].scatter(pred_at, self.predictions[col][pred_at, 0], color='orange')
 
 #             pred_at = np.arange(0, len(self.predictions[col]), self.horizon, dtype=np.int)
 #             axes[indexes.index(index)].plot(np.arange(0, len(self.predictions[col])), np.hstack([x.iloc[:, :] for x in self.test]).flatten(), color='blue', label='actual')
