@@ -23,33 +23,6 @@ class BaselineModelTester(ModelTester):
         return 'BaselineTester of' + repr(self.model)
 
 
-    # def compare_hurst(self, hurst_estimates, err_to_use='RMSE', errors=None, figsize=(8, 6)):
-    #     """
-    #
-    #     :param hurst_estimates:
-    #     :param err_to_use:
-    #     :param errors:
-    #     :return:
-    #     """
-    #     if errors is None:
-    #         errors = self.errors
-    #
-    #     plt.figure(figsize=figsize)
-    #     plt.errorbar(x=hurst_estimates['avg'], y=errors[err_to_use], xerr=hurst_estimates['std'], fmt='o')
-    #
-    #     # Linear fit
-    #     slope, intercept, r_value, p_value, std_err = stats.linregress(hurst_estimates['avg'], errors[err_to_use])
-    #     X = np.linspace(0, hurst_estimates['avg'].max() * 1.1, 10)
-    #     plt.xlim([hurst_estimates['avg'].min() * 0.98, hurst_estimates['avg'].max() * 1.02])
-    #
-    #     plt.plot(X, intercept + slope * X, c='black',
-    #              label="y= " + str(round(slope, 2)) + "X + " + str(round(intercept, 2)) + ", R = " + str(
-    #                  round(r_value ** 2, 2)))
-    #
-    #     plt.fill_between(X, intercept + slope * X + std_err, intercept + slope * X - std_err, facecolor='r', alpha=0.5)
-    #     plt.legend()
-
-
     def visualise_result(self, name, index, figsize=(6, 6)):
         """
 

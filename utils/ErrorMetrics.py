@@ -15,13 +15,17 @@ ts = ro.r('ts')
 forecast = importr('forecast')
 thetaModel = importr('forecTheta')
 smooth = importr('smooth')
+metrics = importr('Metrics')
+sen = importr('tsensembler')
 
-__error_metrics__ = ['MAE', 'RMSE', 'MAPE', 'sMAPE', 'MASE', 'MASE1', 'MEAN_ASE']
+__error_metrics__ = ['MAE', 'RMSE', 'MAPE', 'sMAPE', 'MASE', 'MASE2', 'MASE3', 'MEAN_ASE']
 
 
 def calculate_all_errors(training, actual, prediction, horizon, expand_actual=True):
     """
-    Calculate all error metrics used within the project.
+    Calculate all error metrics used within this project.
+
+    Metrics: MAE, rmSE, MAPE, sMAPE, MASE, MASE1
     """
     if expand_actual:
         indexer = np.arange(horizon)[None, :] + np.arange((len(actual) - horizon))[:, None]
@@ -43,7 +47,9 @@ def calculate_all_errors(training, actual, prediction, horizon, expand_actual=Tr
     errors['MAPE'] = thetaModel.errorMetric(obs=rActual, forec=rPred, type="APE", statistic="M")[0]
     errors['sMAPE'] = thetaModel.errorMetric(obs=rActual, forec=rPred, type="sAPE", statistic="M")[0]
     errors['MASE'] = MASE(training, actual, prediction)
-    errors['MASE1'] = smooth.MASE(rActual, rPred, np.mean(training), digits=5)[0]
+    # errors['MASE1'] = smooth.MASE(rActual, rPred, np.mean(training), digits=5)[0]
+    errors['MASE2'] = metrics.mase(rActual, rPred, 1)[0]
+    errors['MASE3'] = sen.mase(rActual, rPred)[0]
     errors['MEAN_ASE'] = calculate_MASE(training, prediction, actual)
     #     errors['RW_ASE']   = calculate_rw_MASE(training, prediction, actual, horizon)
 

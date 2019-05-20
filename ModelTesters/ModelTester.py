@@ -17,7 +17,6 @@ class ModelTester():
     """
 
     """
-
     def __init__(self, dataset, model, test_step_size=10, train_holdout=0.8):
         self.horizon = test_step_size
         self.dataset = dataset
@@ -121,14 +120,4 @@ class ModelTester():
 
             axes[indexes.index(index)].plot(x, test, color='blue', label='actual')
             axes[indexes.index(index)].plot(x, pred, color='orange', label='pred')
-
-            # axes[indexes.index(index)].scatter(pred_at, self.predictions[col][pred_at, 0], color='orange')
-
-#             pred_at = np.arange(0, len(self.predictions[col]), self.horizon, dtype=np.int)
-#             axes[indexes.index(index)].plot(np.arange(0, len(self.predictions[col])), np.hstack([x.iloc[:, :] for x in self.test]).flatten(), color='blue', label='actual')
-#             axes[indexes.index(index)].plot(np.arange(0, len(self.predictions[col])), self.predictions[col][pred_at].flatten(), color='orange', label='pred')
-
-#             axes[indexes.index(index)].scatter(pred_at, self.predictions[col][pred_at, 0], color='orange')
-
-
 
