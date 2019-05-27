@@ -1,4 +1,4 @@
-# engg4802
+# ENGG4802 - Modelling a Relationship Between Renewable Forecasting Error and Statistical Predictability
 
 ## Installation
 pip install numpy pandas matplotlib scipy sklearn keras rpy2 matlab lightgbm
