@@ -1,5 +1,8 @@
 # engg4802
 
+## Installation
+pip install numpy pandas matplotlib scipy sklearn keras rpy2 matlab lightgbm
+
 ## Hurst Calculation
 1. Split dataset:
   a) Run Split_Data.ipynb to seperate the original data into n (currently 60) datasets but dividing the data into m (=15) sets then applying the specified moving averages.
@@ -12,7 +15,7 @@ All forecasting methods are implemented as a Python Class implementing the stand
 
 To produce a forecast and calculate the error metrics for each method a Class inheriting from BaselineModelTester is used. This Class implements test_model(), visualise_result and compare_hurst() methods. a speed_up_calc() function is occasionally used to improve the performance of the model training and testing to speed up compuation time. The compare_hurst() method produces a linear fit between H and and the provided metric (typically MASE) for all dataset.
 
-In each Forecasting Method file forecasts are produced for 1, 5 and 60 minute forecasting horizons. A relationship between H and MASE is calculated and show and the results (all error metrics for each dataset) are saved to 'results/forecasting_method_horizon.csv'.
+In each Forecasting Method file forecasts are produced for 1, 5 and 60 minute forecasting horizons. A relationship between H and MASE is calculated and show and the results (all error metrics for each dataset) are saved to 'results/forecasting_method_horizon_results.csv'.
 
 The following error metrics are calculated:
 MAE	  - Mean Absolute Error
@@ -22,9 +25,7 @@ sMAPE - Symmetric Mean Absolute Percentage Error
 MASE  - Mean Absolute Scaled Error
 Ignore - MASE2	MASE3	MEAN_ASE
 
-### Baselines
+Some methods are implemented using the R programming language 
 
-### Exponential Moving Average
+## Notes on specific methods:
 
-
-### ANN
